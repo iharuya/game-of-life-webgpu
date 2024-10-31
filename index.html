@@ -29,6 +29,73 @@
       format: canvasFormat
     })
 
+    // 正方形を作る
+    const vertices = new Float32Array([
+      //   X,    Y,
+      -0.8, -0.8, // Triangle 1
+      0.8, -0.8,
+      0.8, 0.8,
+
+      -0.8, -0.8, // Triangle 2
+      0.8, 0.8,
+      -0.8, 0.8,
+    ]);
+    const vertexBuffer = device.createBuffer({
+      label: "Cell vertices",
+      size: vertices.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(
+      vertexBuffer,
+      0, // offset 
+      vertices
+    )
+    const vertexBufferLayout = {
+      arrayStride: 8, // 1点のデータのサイズ
+      attributes: [
+        { // 頂点の位置
+          format: "float32x2",
+          offset: 0,
+          shaderLocation: 0
+        }
+        // 頂点の色、ジオメトリのサーフェスが向いている方向などもここで指定できる
+      ]
+    }
+    const cellShaderModule = device.createShaderModule({
+      label: "Cell shader",
+      code: `
+// メモリにある頂点に関する情報のうち、位置を変更しないシェーダー
+// つまりなにもしない
+@vertex
+fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
+  return vec4f(pos.x, pos.y, 0, 1); // (X, Y, Z, W)
+}
+
+// 頂点シェーダーが実行された後、3つの頂点から三角形を作る
+// その三角形に含まれるピクセルそれぞれに対してフラグメントシェーダー（色を決定する）関数が実行される
+@fragment
+fn fragmentMain() -> @location(0) vec4f {
+  return vec4f(1, 0, 0, 1);
+}
+  `
+    });
+    const cellPipeline = device.createRenderPipeline({
+      label: "Cell pipeline",
+      layout: "auto",
+      vertex: {
+        module: cellShaderModule,
+        entryPoint: "vertexMain",
+        buffers: [vertexBufferLayout]
+      },
+      fragment: {
+        module: cellShaderModule,
+        entryPoint: "fragmentMain",
+        targets: [{
+          format: canvasFormat
+        }]
+      }
+    });
+
     const encoder = device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
       colorAttachments: [
@@ -40,6 +107,9 @@
         }
       ]
     })
+    pass.setPipeline(cellPipeline);
+    pass.setVertexBuffer(0, vertexBuffer);
+    pass.draw(vertices.length / 2) // 頂点の数
     pass.end()
     device.queue.submit([encoder.finish()])
 
