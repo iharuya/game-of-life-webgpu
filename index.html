@@ -1,46 +1,49 @@
 <!doctype html>
 
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>WebGPU Life</title>
-  </head>
-  <body>
-    <canvas width="512" height="512"></canvas>
-    <script type="module">
-      const canvas = document.querySelector("canvas");
 
-      if (!navigator.gpu) {
-        throw new Error("WebGPU not supported")
-      }
-      const adapter = await navigator.gpu.requestAdapter();
-      if (!adapter) {
-        throw new Error("No adapter found");
-      }
-      const device = await adapter.requestDevice();
-      console.log(device);
+<head>
+  <meta charset="utf-8">
+  <title>WebGPU Life</title>
+</head>
 
-      const context = canvas.getContext("webgpu");
-      const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
-      context.configure({
-        device,
-        format: canvasFormat
-      })
+<body>
+  <canvas width="512" height="512"></canvas>
+  <script type="module">
+    const canvas = document.querySelector("canvas");
 
-      const encoder = device.createCommandEncoder();
-      const pass = encoder.beginRenderPass({
-        colorAttachments: [
-          {
-            view: context.getCurrentTexture().createView(),
-            loadOp: "clear",
-            clearValue: { r: 0, g: 0.4, b: 0.1, a: 1 },
-            storeOp: "store",
-          }
-        ]
-      })
-      pass.end()
-      device.queue.submit([encoder.finish()])
-      
-    </script>
-  </body>
+    if (!navigator.gpu) {
+      throw new Error("WebGPU not supported")
+    }
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+      throw new Error("No adapter found");
+    }
+    const device = await adapter.requestDevice();
+    console.log(device);
+
+    const context = canvas.getContext("webgpu");
+    const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+    context.configure({
+      device,
+      format: canvasFormat
+    })
+
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: context.getCurrentTexture().createView(),
+          loadOp: "clear",
+          clearValue: { r: 0, g: 0.4, b: 0.1, a: 1 },
+          storeOp: "store",
+        }
+      ]
+    })
+    pass.end()
+    device.queue.submit([encoder.finish()])
+
+  </script>
+</body>
+
 </html>
