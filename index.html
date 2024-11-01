@@ -30,7 +30,7 @@
     })
 
     // 共通の値をuniformとして渡す
-    const GRID_SIZE = 4
+    const GRID_SIZE = 64
     const uniformArray = new Float32Array([GRID_SIZE, GRID_SIZE])
     const uniformBuffer = device.createBuffer({
       label: "Grid Uniforms",
@@ -77,18 +77,37 @@
       code: `
 @group(0) @binding(0) var<uniform> grid: vec2f;
 
+struct VertexInput {
+  @location(0) pos: vec2f,
+  @builtin(instance_index) instance: u32, 
+};
+
+struct VertexOutput {
+  @builtin(position) pos: vec4f,
+  @location(0) cell: vec2f,
+};
+
 @vertex
-fn vertexMain(@location(0) pos: vec2f, @builtin(instance_index) instance: u32) -> @builtin(position) vec4f {
-  let i = f32(instance);
+fn vertexMain(input: VertexInput) -> VertexOutput {
+  let i = f32(input.instance);
   let cell = vec2f(i % grid.x, floor(i / grid.x));
   let cellOffset = cell / grid * 2;
-  let gridPos = (pos + 1) / grid - 1 + cellOffset;
-  return vec4f(gridPos, 0, 1); // (X, Y, Z, W)
+  let gridPos = (input.pos + 1) / grid - 1 + cellOffset;
+
+  var output: VertexOutput;
+  output.pos = vec4f(gridPos, 0, 1); // (X, Y, Z, W)
+  output.cell = cell;
+  return output;
 }
 
+struct FragInput {
+  @location(0) cell: vec2f,
+};
+
 @fragment
-fn fragmentMain() -> @location(0) vec4f {
-  return vec4f(1, 0, 0, 1);
+fn fragmentMain(input: FragInput) -> @location(0) vec4f {
+  let c = input.cell / grid;
+  return vec4f(c, 1-c.x, 1);
 }
   `
     });
@@ -126,7 +145,7 @@ fn fragmentMain() -> @location(0) vec4f {
         {
           view: context.getCurrentTexture().createView(),
           loadOp: "clear",
-          clearValue: { r: 0.8, g: 0.8, b: 0.8, a: 1 },
+          clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1 },
           storeOp: "store",
         }
       ]
