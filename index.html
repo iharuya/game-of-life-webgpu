@@ -14,27 +14,50 @@
       height: 100vh;
       background-color: #000;
     }
+
+    canvas {
+      display: none;
+    }
+
+    #error {
+      display: none;
+      color: #fff;
+      font-size: 2rem;
+      font-weight: bold;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+    }
   </style>
 </head>
 
 <body>
   <canvas></canvas>
+  <div id="error"></div>
   <script type="module">
+    let adapter;
+    try {
+      if (!navigator.gpu) {
+        throw new Error("WebGPU not supported")
+      }
+      adapter = await navigator.gpu.requestAdapter();
+      if (!adapter) {
+        throw new Error("No GPU adapter available")
+      }
+    } catch (error) {
+      const errorElement = document.getElementById("error");
+      errorElement.style.display = "flex";
+      errorElement.textContent = error.message;
+      throw error;
+    }
+
     const canvas = document.querySelector("canvas");
+    canvas.style.display = "block";
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
     const canvasAspectRatio = canvas.width / canvas.height;
 
-    if (!navigator.gpu) {
-      alert("WebGPU not supported")
-      return
-    }
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) {
-      alert("No adapter found")
-      return
-    }
-    
     const device = await adapter.requestDevice();
     console.log(device);
 
