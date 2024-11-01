@@ -5,12 +5,25 @@
 <head>
   <meta charset="utf-8">
   <title>WebGPU Life</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #000;
+    }
+  </style>
 </head>
 
 <body>
-  <canvas width="512" height="512"></canvas>
+  <canvas></canvas>
   <script type="module">
     const canvas = document.querySelector("canvas");
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+    const canvasAspectRatio = canvas.width / canvas.height;
 
     if (!navigator.gpu) {
       throw new Error("WebGPU not supported")
@@ -30,8 +43,12 @@
     })
 
     // 共通の値をuniformとして渡す
-    const GRID_SIZE = 64
-    const uniformArray = new Float32Array([GRID_SIZE, GRID_SIZE])
+    const GRID_SIZE = canvas.width // 1 grid cell = 1 pixel
+    const uniformArray = new Float32Array(
+      canvasAspectRatio > 1
+        ? [GRID_SIZE, Math.floor(GRID_SIZE / canvasAspectRatio)]
+        : [Math.floor(GRID_SIZE * canvasAspectRatio), GRID_SIZE]
+    )
     const uniformBuffer = device.createBuffer({
       label: "Grid Uniforms",
       size: uniformArray.byteLength,
@@ -116,7 +133,6 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
   let cell = vec2f(i % grid.x, floor(i / grid.x));
   let state = f32(cellState[input.instance]);
   let cellOffset = cell / grid * 2;
-  // let gridPos = (input.pos + 1) / grid - 1 + cellOffset;
   let gridPos = (input.pos * state + 1) / grid - 1 + cellOffset;
 
   var output: VertexOutput;
@@ -295,7 +311,7 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u) {
           {
             view: context.getCurrentTexture().createView(),
             loadOp: "clear",
-            clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1 },
+            clearValue: { r: 0, g: 0, b: 0, a: 1 },
             storeOp: "store",
           }
         ]
