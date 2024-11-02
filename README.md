@@ -4,6 +4,8 @@ WebGPU を使ってライフゲームを描画する
 
 [WebGPU を使えるブラウザ・バージョン一覧](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API#browser_compatibility)
 
+Enter キーで全画面トグル
+
 ## The Tutorial
 
 https://codelabs.developers.google.com/your-first-webgpu-app?hl=ja
