@@ -61,6 +61,11 @@
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
       const canvasAspectRatio = canvas.width / canvas.height;
+      const scale = window.devicePixelRatio
+      canvas.width = Math.floor(canvas.width * scale)
+      canvas.height = Math.floor(canvas.height * scale)
+      canvas.style.width = `${canvas.width / scale}px`
+      canvas.style.height = `${canvas.height / scale}px`
 
       const context = canvas.getContext("webgpu");
       const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
@@ -180,7 +185,7 @@
       `
       });
 
-      const WORKGROUP_SIZE = 8
+      const WORKGROUP_SIZE = 16
       const simulationShaderModule = device.createShaderModule({
         label: "Game of Life simulation shader",
         code: `
@@ -200,7 +205,7 @@
           }
           
           @compute // コンウェイのライフゲームのルール
-          @workgroup_size(${WORKGROUP_SIZE}, ${WORKGROUP_SIZE})
+          @workgroup_size(${WORKGROUP_SIZE}, ${WORKGROUP_SIZE}, 1)
           fn computeMain(@builtin(global_invocation_id) cell: vec3u) {
             let activeNeighbors = cellActive(cell.x+1, cell.y+1) +
                                   cellActive(cell.x+1, cell.y) +
@@ -327,7 +332,7 @@
         computePass.setPipeline(simulationPipeline)
         computePass.setBindGroup(0, bindGroups[step % 2])
         const workgroupCount = Math.ceil(GRID_SIZE / WORKGROUP_SIZE)
-        computePass.dispatchWorkgroups(workgroupCount, workgroupCount)
+        computePass.dispatchWorkgroups(workgroupCount, workgroupCount, 1)
         computePass.end()
 
         step++
